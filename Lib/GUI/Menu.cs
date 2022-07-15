@@ -1,4 +1,7 @@
-using Project.Lib.GUI;
+using Project.Lib;
+using System.Linq;
+using Project.Lib.GUI.Components;
+
 
 namespace Project.Lib.GUI
 {
@@ -15,9 +18,24 @@ namespace Project.Lib.GUI
         protected bool hidden = true;
 
         /// <summary>
+        /// Protected property used to keep track of the current selected line
+        /// </summary>
+        protected int currentLine;
+
+        /// <summary>
         /// Protected delegate for Menu events
         /// </summary>
-        protected delegate void MenuEvent(MenuItem item);
+        protected delegate void MenuEvent(MenuItem? item = null);
+
+        /// <summary>
+        /// Protected delegate for keypresses when a menu is active
+        /// </summary>
+        protected delegate void MenuKeyEvent(ConsoleKeyInfo cki);
+        
+        /// <summary>
+        /// Protected MenuEvent that fires whenever a key is pressed down.
+        /// </summary>
+        protected event MenuKeyEvent? OnKeyDown;
 
         /// <summary>
         /// Protected MenuEvent that fires whenever a MenuItem is selected
@@ -50,12 +68,62 @@ namespace Project.Lib.GUI
         private int itemCount = 0;
 
         /// <summary>
+        /// Private property used to control when keypresses are monitored 
+        /// </summary>
+        private bool listenForKeypress = false;
+
+        private void SetCurrentLineHighlightColor(GuiColors color) {
+            
+        }
+
+        private void SetCurrentLineTextColor() {
+
+        }
+
+        private void SetHighlightColor() {
+
+        }
+
+        private void SetTextColor() {
+
+        }
+
+        public void MonitorKeypress() {
+
+            ConsoleKeyInfo cki;
+            
+            var loopWorker = new Thread(() => { 
+                do {
+
+                    if(Console.KeyAvailable) {
+                        cki = Console.ReadKey(true);
+                        OnKeyDown?.Invoke(cki);
+                    }
+                
+
+                } while(listenForKeypress);
+            });
+
+            OnKeyDown += h_OnKeyDown;
+            loopWorker.Start();
+
+        }
+
+        public virtual void h_OnKeyDown(ConsoleKeyInfo cki) {
+            Console.WriteLine(cki.Key);
+        }
+
+        /// <summary>
         /// Method used to render the Menu initially. Call this when you want to show the Menu for the first time, or need to modify it's structure.
         /// </summary>
         public void Render() {
+            string text = "";
             foreach(MenuItem item in menuItems) {
-                Console.WriteLine(item.text);
+                text += item.text + "\n";
             }
+
+            Console.WriteLine(text);
+            listenForKeypress = true;
         }
 
         /// <summary>
@@ -70,6 +138,7 @@ namespace Project.Lib.GUI
         /// </summary>
         public void Show() {
             hidden = false;
+            listenForKeypress = true;
         }
 
         /// <summary>
@@ -77,6 +146,7 @@ namespace Project.Lib.GUI
         /// </summary>
         public void Hide() {
             hidden = true;
+            listenForKeypress = false;
         }
 
         /// <summary>
@@ -91,7 +161,12 @@ namespace Project.Lib.GUI
         /// Add a single MenuItem to the Menu
         /// </summary>
         public void AddItem(string itemText, GuiColors itemHighlightColor = GuiColors.White, GuiColors itemTextColor = GuiColors.White, bool itemActive = true) {
-            MenuItem item = new MenuItem(itemText, itemHighlightColor, itemTextColor, itemActive);
+            MenuItem item = new MenuItem()
+            .SetItemText(itemText)
+            .SetHighlightColor(itemHighlightColor)
+            .SetTextColor(itemTextColor)
+            .SetActiveState(itemActive);
+
             item._id = itemCount++;
             menuItems.Add(item);
         }
