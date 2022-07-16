@@ -20,7 +20,7 @@ namespace Project.Lib.GUI
         /// <summary>
         /// Protected property used to keep track of the current selected line
         /// </summary>
-        protected int currentLine;
+        protected int currentLine = 0;
 
         /// <summary>
         /// Protected delegate for Menu events
@@ -43,9 +43,18 @@ namespace Project.Lib.GUI
         protected event MenuEvent? OnSelect;
 
         /// <summary>
+        /// Protected MenuEvent that fires whenever a MenuItem is deselected
+        /// <summary>
+        protected event MenuEvent? OnDeselect;
+
+        /// <summary>
         /// Protected MenuEvent that fires whenever a MenuItem is highlighted
         /// </summary>
         protected event MenuEvent? OnHighlight;
+
+        /// <summary>
+        /// Protected MenuEvent that fires whenever a MenuItem is unhighlighted
+        protected event MenuEvent? OnHighlightFinish;
 
         /// <summary>
         /// Protected MenuEvent that fires whenever this Menu is rendered
@@ -58,6 +67,16 @@ namespace Project.Lib.GUI
         protected event MenuEvent? OnUpdate;
 
         /// <summary>
+        /// Private property used to control when keypresses are monitored 
+        /// </summary>
+        protected bool listenForKeypress = false;
+
+        /// <summary>
+        /// Protected property used to keep track of the raw menu text
+        /// </summary?
+        protected string _displayText = "";
+
+        /// <summary>
         /// Private property used to store and keep track of each MenuItem in this Menu.
         /// </summary>
         private List<MenuItem> menuItems = new List<MenuItem>();
@@ -67,37 +86,32 @@ namespace Project.Lib.GUI
         /// </summary>
         private int itemCount = 0;
 
-        /// <summary>
-        /// Private property used to control when keypresses are monitored 
-        /// </summary>
-        private bool listenForKeypress = false;
-
         private void SetCurrentLineHighlightColor(GuiColors color) {
             
         }
 
-        private void SetCurrentLineTextColor() {
+        private void SetCurrentLineTextColor(GuiColors color) {
 
         }
 
-        private void SetHighlightColor() {
+        private void SetHighlightColor(GuiColors color) {
 
         }
 
-        private void SetTextColor() {
+        private void SetTextColor(GuiColors color) {
 
         }
 
+        /// <summary>
+        /// Starts a new thread and listens for keypresses on that thread so as to not block the main thread
+        /// </summary>
         public void MonitorKeypress() {
-
-            ConsoleKeyInfo cki;
             
             var loopWorker = new Thread(() => { 
                 do {
 
                     if(Console.KeyAvailable) {
-                        cki = Console.ReadKey(true);
-                        OnKeyDown?.Invoke(cki);
+                        OnKeyDown?.Invoke(Console.ReadKey(true));
                     }
                 
 
@@ -108,9 +122,26 @@ namespace Project.Lib.GUI
             loopWorker.Start();
 
         }
-
+        /// <summary>
+        /// Hook for handling the OnKeyDown event
+        /// </summary>
         public virtual void h_OnKeyDown(ConsoleKeyInfo cki) {
-            Console.WriteLine(cki.Key);
+            switch(cki.Key) {
+                case ConsoleKey.UpArrow:
+
+                break;
+            }
+
+            //Update();
+        }
+
+        /// <summary>
+        /// Hook for handling the OnHighlight event
+        /// </summary>
+        public virtual void h_OnHighlight(MenuItem? item) {
+            if(item != null) {
+                item.text = $"\x1b[;30;47{item?.text}\x1b[0m";
+            }
         }
 
         /// <summary>
@@ -122,6 +153,7 @@ namespace Project.Lib.GUI
                 text += item.text + "\n";
             }
 
+            Console.Clear();
             Console.WriteLine(text);
             listenForKeypress = true;
         }
@@ -129,7 +161,7 @@ namespace Project.Lib.GUI
         /// <summary>
         /// Method used to update the Menu. Call this when you need to update visuals without modifying the structure.
         /// </summary>
-        public void Update() {
+        public void Update(MenuItem itemChanged) {
 
         }
 
