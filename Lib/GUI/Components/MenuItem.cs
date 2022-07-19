@@ -2,7 +2,8 @@ using Project.Lib.GUI;
 
 namespace Project.Lib.GUI.Components {
     public class MenuItem : Menu {
-        public string? text;
+        public string text = "";
+        public string highlightedText = "";
         public bool active;
         public GuiColors highlightColor;
         public GuiColors textColor;
@@ -12,6 +13,7 @@ namespace Project.Lib.GUI.Components {
 
         public MenuItem SetItemText(string itemText) {
             text = itemText;
+            highlightedText = $"\x1b[;30;47m{itemText}\x1b[0m";
             return this;
         }
 

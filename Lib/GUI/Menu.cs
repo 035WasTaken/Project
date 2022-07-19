@@ -2,9 +2,13 @@ using Project.Lib;
 using System.Linq;
 using Project.Lib.GUI.Components;
 
+// need to rename everything that says GUI to UI
 
 namespace Project.Lib.GUI
 {
+    /// <summary>
+    /// Class for creating simple menus in the console
+    /// </summary>
     public class Menu
     {
         /// <summary>
@@ -86,20 +90,12 @@ namespace Project.Lib.GUI
         /// </summary>
         private int itemCount = 0;
 
-        private void SetCurrentLineHighlightColor(GuiColors color) {
-            
-        }
+        public Menu() {
+            // assign all events to their handlers in here
 
-        private void SetCurrentLineTextColor(GuiColors color) {
-
-        }
-
-        private void SetHighlightColor(GuiColors color) {
-
-        }
-
-        private void SetTextColor(GuiColors color) {
-
+            OnKeyDown += h_OnKeyDown;
+            OnHighlight += h_OnHighlight;
+            OnHighlightFinish += h_OnHighlightFinish;
         }
 
         /// <summary>
@@ -107,54 +103,87 @@ namespace Project.Lib.GUI
         /// </summary>
         public void MonitorKeypress() {
             
-            var loopWorker = new Thread(() => { 
+            // create a new thread and assign it to the variable loopWorker
+            // we do this to avoid blocking the main thread
+            Thread loopWorker = new Thread(() => { 
                 do {
-
+                    
+                    // check to see if a key is currently being pressed
                     if(Console.KeyAvailable) {
+                        // if true, we invoke the OnKeyDown event
                         OnKeyDown?.Invoke(Console.ReadKey(true));
                     }
                 
-
+                // while the variable listenForKeypress is set to true, this loop will run
                 } while(listenForKeypress);
             });
 
-            OnKeyDown += h_OnKeyDown;
+            // start the thread
             loopWorker.Start();
-
         }
+
         /// <summary>
         /// Hook for handling the OnKeyDown event
         /// </summary>
         public virtual void h_OnKeyDown(ConsoleKeyInfo cki) {
-            switch(cki.Key) {
-                case ConsoleKey.UpArrow:
+            // keep track of the last selected line in order to reset it
+            int lastLine = currentLine;
+            // same thing here
+            MenuItem lastItem = menuItems[lastLine];
 
+            // figure out which key was pressed
+            switch(cki.Key) {
+                // when the up arrow is pressed
+                case ConsoleKey.UpArrow:
+                    currentLine = (currentLine == 0 ? menuItems.Count - 1 : currentLine - 1);
+                break;
+                // when the down arrow is pressed
+                case ConsoleKey.DownArrow:
+                    currentLine = (currentLine == menuItems.Count - 1 ? 0 : currentLine + 1);
                 break;
             }
 
-            //Update();
+            // we need to get the text values from the current version of the menu item
+            MenuItem item = menuItems[currentLine];
+
+            UpdateLine(0, currentLine, item.highlightedText);
+            UpdateLine(0, lastLine, lastItem.text);
         }
 
+        // if(item != null) as opposed to if(item == null) return;
+
         /// <summary>
-        /// Hook for handling the OnHighlight event
+        /// Hook for handling the OnHighlight event. Unused until I decide to rewrite it.
         /// </summary>
         public virtual void h_OnHighlight(MenuItem? item) {
             if(item != null) {
-                item.text = $"\x1b[;30;47{item?.text}\x1b[0m";
+                item.SetItemText(item.highlightedText);
             }
         }
 
         /// <summary>
-        /// Method used to render the Menu initially. Call this when you want to show the Menu for the first time, or need to modify it's structure.
+        /// Hook for handling the OnHighlightFinish event. Unused until I decide to rewrite it.
+        public virtual void h_OnHighlightFinish(MenuItem? item) {
+            if(item != null) {
+                item.SetItemText(item.text);
+            }
+        }
+
+        /// <summary>
+        /// Method used to render the Menu initially. Call this when you want to show the Menu for the first time, or need to modify its structure.
         /// </summary>
         public void Render() {
-            string text = "";
+            Console.Clear();
+
             foreach(MenuItem item in menuItems) {
-                text += item.text + "\n";
+                if(item._id == 0) {
+                    Console.WriteLine($"\x1b[;30;47m{item?.text}\x1b[0m");
+                    continue;
+                }
+
+                Console.WriteLine(item.text);
             }
 
-            Console.Clear();
-            Console.WriteLine(text);
             listenForKeypress = true;
         }
 
@@ -163,6 +192,45 @@ namespace Project.Lib.GUI
         /// </summary>
         public void Update(MenuItem itemChanged) {
 
+        }
+
+        public void UpdateLine(int y) {
+            // store default cursor position
+            (int, int) oldCursorPosition = Console.GetCursorPosition();
+            // get menu item displayed at line y
+            MenuItem? item = menuItems[y];
+
+
+            if(item != null) {
+                // set cursor position to the beginning of line y
+                Console.SetCursorPosition(0, y);
+                // delete everything from the cursor to the end of the line
+                Console.Write("\x1b[0k");
+                // replace with updated item.text
+                Console.Write(item.text);
+
+                // reset cursor position to default
+                Console.SetCursorPosition(oldCursorPosition.Item1, oldCursorPosition.Item2);
+            }
+        }
+
+        public void UpdateLine(int x, int y, string text) {
+            // store default cursor position
+            (int, int) oldCursorPosition = Console.GetCursorPosition();
+            // get menu item displayed at line y
+            MenuItem? item = menuItems[y];
+
+            if(item != null) {
+                // set cursor position to beginning of line y
+                Console.SetCursorPosition(0, y);
+                // delete everything from the cursor to the end of the line
+                Console.Write("\x1b[0k");
+                // replace with updated text
+                Console.Write(text);
+
+                // reset cursor position to default
+                Console.SetCursorPosition(oldCursorPosition.Item1, oldCursorPosition.Item2);   
+            }
         }
 
         /// <summary>
